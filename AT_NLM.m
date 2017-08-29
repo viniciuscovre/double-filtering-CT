@@ -1,5 +1,6 @@
-function img_NLM = nlm_pre(ima_nse, jan_busca, patch, h)
-%NLM filtro Non Local Means no domínio das projeções.
+function img_NLM = AT_NLM(ima_nse, jan_busca, patch, h)
+%NLM filtro Non Local Means (pós) para dados de projeção no domínio de
+%anscombe (ruído se torna gaussiano), se tornando uma "pré-filtragem"
 %   Essa função aplica o filtro Non Local Means na imagem 'img' com uma
 %   janela de busca de tamanho padrão 11x11 e com patches de tamanho padrão
 %   3x3. O parâmetro h é um estimador de suavização da imagem. Quanto maior
@@ -23,8 +24,10 @@ function img_NLM = nlm_pre(ima_nse, jan_busca, patch, h)
 
 % Verificações iniciais
 
-peso = .1; %constante peso %menor valor possível: 0.05
-densidade = 'poisson';
+ima_nse = noise_transform(ima_nse,'ansc');
+
+peso = .1; %constante peso %menor valor possível: 0.0935
+densidade = 'gaussiana';
 
 if nargin < 1
     error('Numero insuficiente de argumentos de entrada');
@@ -42,9 +45,13 @@ elseif nargin > 3
     error('Excedeu o numero de argumentos de entrada!');
     pause
 end
+ima_nse(ima_nse == 0) = .00001;
 
-%ima_nse = im2double(ima_nse);
-ima_nse(ima_nse <= 0) = .00001;
+%%normalizar e desnormalizar igual BM3D_pre_ansc (TENTAR)
+%ima_nse = noise_transform(ima_nse,'ansc');
+%M = max(ima_nse(:));
+%m = min(ima_nse(:));
+%ima_nse = ((ima_nse-m)/(M-m))*255;
 
 [M N] = size(ima_nse); % ima_nse = imagem ruidosa. M=linhas, N=colunas
 [cM cN] = fourier_center(M, N); %centro do patch (antes de FT)
@@ -60,24 +67,29 @@ A = zeros(M,N); %numerador
 B = zeros(M,N); %denominador % A e B são acumuladores
 
 d = floor(jan_busca/2); %d = deslocamento
+
+% Esse conjunto de "for" percorre a janela de busca
+% % % if strcmp(densidade,'gaussiana') == 1
 for i = -d: d
-    for j = -d: d
-        if i^2 + j^2 > d^2 || (i == 0 && j == 0)
-            % C1: se o pixel não pertence à area de busca (para considerar uma área de busca circular)
-            % C2: quando não precisa de uma mudança (compara o patch com ele mesmo -> é desnecessário)
-            continue
-        end
-        %circshift --> para trocar as linhas da ima_nse
+for j = -d: d
+if i^2 + j^2 > d^2 || (i == 0 && j == 0)
+    % C1: se o pixel não pertence à area de busca (para considerar uma área de busca circular)
+    % C2: quando não precisa de uma mudança (compara o patch com ele mesmo -> é desnecessário)
+    continue
+end
+
         deslocada = circshift(ima_nse, [i j]); %imagem deslocada
-        diferenca = (ima_nse.*log(ima_nse))+(deslocada.*log(deslocada))-((ima_nse+deslocada).*log((ima_nse+deslocada)/2));
-        w = exp((-real(ifft2(patch_shape'.*fft2(diferenca))/h))); %eq (10) do algoritmo da tese do denis
+        diferenca = (ima_nse - deslocada).^2;
+        w = exp((-real(ifft2(patch_shape'.*fft2(diferenca)))/h)); %eq (10) do algoritmo da tese do denis
+        
         A = A + w .* deslocada;
         B = B + w;
     end
 end
 % B(B == 0) = .00001;
 img_NLM = A./B;
-% M = max(img_NLM(:));
-% m = min(img_NLM(:));
-% img_NLM = ((img_NLM-m)/(M-m))*255;
+
+%img_NLM = img_NLM * (M-m)/255 + m; %voltou à escala original
+%clear M; clear m;
+img_NLM = noise_transform(img_NLM,'ansc_inverse');
 end

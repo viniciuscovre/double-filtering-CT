@@ -1,4 +1,4 @@
-function sinogram_g = map_pontual (sinogram, densidade, jan)
+function sinogram_g = MAP(sinogram, densidade, jan)
 %MAP_PONTUAL calcula o estimador MAP com determinada densidade.
 %Pré-filtragem de projeções.
 %

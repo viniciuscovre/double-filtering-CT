@@ -1,4 +1,4 @@
-function filtrada = wiener2D(imgG, vr, jan)
+function filtrada = PWF_2D(imgG, vr, jan)
 % filtro de wiener para imagens pós-reconstrução
 
 if nargin < 1

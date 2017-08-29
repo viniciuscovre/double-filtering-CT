@@ -1,38 +1,17 @@
- function filtrada = wiener(imgG,jan,dominio)
-%FILTRO_DE_WIENER filtragem pré ou pós reconstrução da imagem
-%
-%       O primeiro parâmetro é o sinograma das projeções ruidosas, no caso
-%   do uso do wiener para pré-reconstrução. Ao abrir um arquivo .mat no
-%   Matlab, uma variável 'sinogram' é criada contendo o sinograma das
-%   projeções descritas nesse arquivo.
-%       Para o caso do uso desse filtro para pós-reconstrução, o primeiro
-%   parâmetro é a imagem reconstruída.
-%
-%       O parâmetro pre_pos indica se o uso do filtro de wiener é para a
-%   filtragem pré ou pós reconstrução dos dados de projeção.
-%
-%       O parâmetro 'dominio' costuma ser 'ansc', pela filtragem ser  no
-%   domínio de Anscombe, uma vez que o filtro de Wiener trata de ruído
-%   aditivo. Mas essa observação só é válida caso a filtragem seja
-%   pré-reconstução dos dados de projeção
+function filtrada = AT_GWF(imgG,jan)
+% filtro de wiener generalizado (para projeções no domínio de anscombe)
 
-%l (linhas) recebe a quantidade (tamanho) de linhas da variável
-%'sinogram'. Do mesmo modo para c (colunas).
-
-if nargin > 3 || nargin < 1
-    error('Número inválido de argumentos de entrada!');
-    pause
+if nargin < 1
+    error('Numero insuficiente de argumentos de entrada');
+    pause;
 elseif nargin == 1
-    jan = 5;
-    dominio = 'ansc';
-else
-    dominio = 'ansc';
+    jan = 3;
+elseif nargin > 2
+    error('Excedeu o numero de argumentos de entrada');
+    pause;
 end
 
-mean_filt = fspecial('average', [1 jan]);
-imgF = imfilter(imgG, mean_filt);
-
-alfa = 1; %padrão fora do domínio de anscombe: 0.85
+alfa = 0.85; %padrão fora do domínio de anscombe: 0.85
 
 imgG = noise_transform(imgG,'ansc');
 

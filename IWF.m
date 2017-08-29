@@ -1,72 +1,45 @@
-function filtrada = Wmrf_sep_PA(imgG, jan, dominio)
-%WIENER_MRF filtragem pré reconstrução da imagem (filtro Pós no domínio de
-% Anscombe)
+function filtrada = IWF(imgG, sigma2v, jan)
+%WIENER_MRF filtragem pós reconstrução da imagem.
 %
 %   DESCRIÇÃO: Um filtro de sinal no domínio da imagem, baseado no famoso
 %              filtro de Wiener, mas em Campos Aleatórios Markovianos.
-%              Trata-se do filtro de Wiener com MRF Separável. Essa é a
-%              versão adaptada para filtragem no domínio das projeções,
-%              onde os dados de projeção são alterados pela Transfomrada de
-%              Anscombe de modo a obter distribuição gaussiana de ruído.
+%              Trata-se do filtro de Wiener com MRF Isotrópico.
 %   PARÂMETROS:
 %               imgG - Imagem ruidosa reconstruída.
 %               sigma2v - Variância do ruído da imagem ruidosa.
-%               dominio - Domínio da mudança de base dos dados.
+%               jan - Janela do patch da filtragem.
 %   RETORNO:
-%            filtrada - Imagem filtrada pelo filtro de Wiener MRF Separável
+%            filtrada - Imagem filtrada pelo filtro de Wiener MRF
+%            Isotrópico
 
 if nargin > 3 || nargin < 1
     error('Número inválido de argumentos de entrada!');
     pause
 elseif nargin == 1
+    sigma2v = 22.2;
     jan = 3;
-    dominio = 'ansc';
 else
-    dominio = 'ansc';
+    jan = 3;
 end
-
-sigma2v = 1;
-
-% %cria a máscara do tamanho [jan jan] para um filtro da média ('average')
-% mean_filt = fspecial('average', [1 jan]);
-% imgF = imfilter(imgG, mean_filt);
 
 [l,c]=size(imgG);
 pad = floor(jan/2);
 
-for k=1 : l
-    imgF(k,:) = medida_sinal(imgG(k,:),'media',jan);
-end
-clear k;
-
-%CÁLCULO DAS MÉDIAS POR MEDIDA_SINAL
-for k=1 : l
-    mf(k,:) = medida_sinal(imgF(k,:),'media',jan);
-end
-clear k;
-for k=1 : l
-    mg(k,:) = medida_sinal(imgG(k,:),'media',jan);
-end
-%FIM DESSE CÁLCULO
-
-% M = max(imgG(:));
-% m = min(imgG(:));
-% imgG = ((imgG-m)/(M-m))*255;
-% 
-% M_ = max(imgF(:));
-% m_ = min(imgF(:));
-% imgF = ((imgF-m_)/(M_-m_))*255;
-% 
-% M = max(M,M_);
-% m = min(m,m_);
+%cria a máscara do tamanho [jan jan] para um filtro da média ('average')
+mean_filt = fspecial('average', [jan jan]);
+imgF = imfilter(imgG, mean_filt); %media da imagem filtrada
+%imgF = nlm_pos(imgG);
+mf = imfilter(imgF, mean_filt); %media da imagem filtrada
+mg = imfilter(imgG, mean_filt); %media da imagem ruidosa
 
 acumulador = zeros(l,c);
 
-i = 0;
-for j = -pad : pad
-    deslocada = circshift(imgF, [i j]);
-    diferenca = (deslocada - mf).^2;
-    acumulador = acumulador + diferenca;
+for i = -pad : pad
+    for j = -pad : pad
+        deslocada = circshift(imgF, [i j]);
+        diferenca = (deslocada - mf).^2;
+        acumulador = acumulador + diferenca;
+    end
 end
 vf = acumulador/((jan^2)-1); % n = jan*jan (fórmula da variância)
 
@@ -86,7 +59,7 @@ for I = 1 : jan
         for i = 1 : jan
             for j = 1 : jan
                 Aj = Aj+1;
-                pesos_rgg(Ai,Aj) = ro^abs(I-i) * ro^abs(J-j);
+                pesos_rgg(Ai,Aj) = ro^sqrt((I-i)^2 + (J-j)^2);
             end
         end
     end
@@ -113,7 +86,6 @@ for i = pad+1 : l+pad
         filtrada(i-pad, j-pad) = mf(i,j) + sum(patch(:) .* a(:));
     end
 end
+
 filtrada(vf == 0) = imgF(vf == 0);
-% filtrada = filtrada * (M-m)/255 + m;
-filtrada = noise_transform(filtrada, [dominio '_inverse']);
 end

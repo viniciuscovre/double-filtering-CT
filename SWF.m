@@ -1,16 +1,15 @@
-function filtrada = Wmrf_iso(imgG, sigma2v, jan)
+function filtrada = SWF(imgG, sigma2v, jan)
 %WIENER_MRF filtragem pós reconstrução da imagem.
 %
 %   DESCRIÇÃO: Um filtro de sinal no domínio da imagem, baseado no famoso
 %              filtro de Wiener, mas em Campos Aleatórios Markovianos.
-%              Trata-se do filtro de Wiener com MRF Isotrópico.
+%              Trata-se do filtro de Wiener com MRF Separável.
 %   PARÂMETROS:
 %               imgG - Imagem ruidosa reconstruída.
 %               sigma2v - Variância do ruído da imagem ruidosa.
 %               jan - Janela do patch da filtragem.
 %   RETORNO:
-%            filtrada - Imagem filtrada pelo filtro de Wiener MRF
-%            Isotrópico
+%            filtrada - Imagem filtrada pelo filtro de Wiener MRF Separável
 
 if nargin > 3 || nargin < 1
     error('Número inválido de argumentos de entrada!');
@@ -59,7 +58,7 @@ for I = 1 : jan
         for i = 1 : jan
             for j = 1 : jan
                 Aj = Aj+1;
-                pesos_rgg(Ai,Aj) = ro^sqrt((I-i)^2 + (J-j)^2);
+                pesos_rgg(Ai,Aj) = ro^abs(I-i) * ro^abs(J-j);
             end
         end
     end

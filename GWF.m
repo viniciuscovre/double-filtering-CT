@@ -1,4 +1,4 @@
-function filtrada = wiener_gen(imgG,jan)
+function filtrada = GWF(imgG,jan)
 %filtro de wiener generalizado (para imagens pós-construídas)
 
 if nargin < 1

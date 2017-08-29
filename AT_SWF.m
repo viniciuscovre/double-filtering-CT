@@ -1,26 +1,25 @@
-function filtrada = Wmrf_iso_PA(imgG, jan, dominio)
+function filtrada = AT_SWF(imgG, jan, dominio)
 %WIENER_MRF filtragem pré reconstrução da imagem (filtro Pós no domínio de
 % Anscombe)
 %
 %   DESCRIÇÃO: Um filtro de sinal no domínio da imagem, baseado no famoso
 %              filtro de Wiener, mas em Campos Aleatórios Markovianos.
-%              Trata-se do filtro de Wiener com MRF Isotrópico. Essa é a
+%              Trata-se do filtro de Wiener com MRF Separável. Essa é a
 %              versão adaptada para filtragem no domínio das projeções,
 %              onde os dados de projeção são alterados pela Transfomrada de
 %              Anscombe de modo a obter distribuição gaussiana de ruído.
 %   PARÂMETROS:
 %               imgG - Imagem ruidosa reconstruída.
-%               jan - Janela do patch da filtragem.
+%               sigma2v - Variância do ruído da imagem ruidosa.
 %               dominio - Domínio da mudança de base dos dados.
 %   RETORNO:
-%            filtrada - Imagem filtrada pelo filtro de Wiener MRF
-%            Isotrópico
+%            filtrada - Imagem filtrada pelo filtro de Wiener MRF Separável
 
 if nargin > 3 || nargin < 1
     error('Número inválido de argumentos de entrada!');
     pause
 elseif nargin == 1
-    jan = 9;
+    jan = 3;
     dominio = 'ansc';
 else
     dominio = 'ansc';
@@ -29,7 +28,7 @@ end
 sigma2v = 1;
 
 % %cria a máscara do tamanho [jan jan] para um filtro da média ('average')
-% mean_filt = fspecial('average', [jan jan]);
+% mean_filt = fspecial('average', [1 jan]);
 % imgF = imfilter(imgG, mean_filt);
 
 [l,c]=size(imgG);
@@ -52,25 +51,23 @@ end
 
 % M = max(imgG(:));
 % m = min(imgG(:));
-% %imgG = ((imgG-m)/(M-m))*255;
+% imgG = ((imgG-m)/(M-m))*255;
 % 
 % M_ = max(imgF(:));
 % m_ = min(imgF(:));
-% % imgF = ((imgF-m_)/(M_-m_))*255;
-% imgF = ((imgF-m_)/(M_-m_))*(M-m)+m;
+% imgF = ((imgF-m_)/(M_-m_))*255;
 % 
 % M = max(M,M_);
 % m = min(m,m_);
 
 acumulador = zeros(l,c);
 
-i=0;
+i = 0;
 for j = -pad : pad
     deslocada = circshift(imgF, [i j]);
     diferenca = (deslocada - mf).^2;
     acumulador = acumulador + diferenca;
 end
-
 vf = acumulador/((jan^2)-1); % n = jan*jan (fórmula da variância)
 
 imgG = padarray(imgG, [pad pad], 'symmetric');
@@ -89,7 +86,7 @@ for I = 1 : jan
         for i = 1 : jan
             for j = 1 : jan
                 Aj = Aj+1;
-                pesos_rgg(Ai,Aj) = ro^sqrt((I-i)^2 + (J-j)^2);
+                pesos_rgg(Ai,Aj) = ro^abs(I-i) * ro^abs(J-j);
             end
         end
     end

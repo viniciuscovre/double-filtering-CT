@@ -1,4 +1,4 @@
-function img_NLM = nlm_pos(ima_nse, jan_busca, patch, h)
+function img_NLM = NLM(ima_nse, jan_busca, patch, h)
 %NLM filtro Non Local Means no domínio da imagem.
 %   Essa função aplica o filtro Non Local Means na imagem 'img' com uma
 %   janela de busca de tamanho padrão 11x11 e com patches de tamanho padrão
